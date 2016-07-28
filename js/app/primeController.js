@@ -25,13 +25,13 @@
             $scope.calcMaxPrime = function () {
                 $scope.processing = true;
                 $scope.complete = false;
-                $scope.error = "";
+                $scope.error = "";  
                 primeService.calcMaxPrime($scope.model.maxTime).then(
-                    function (totalTime, maxPrime, totalPrimes, totalNumbers) {
-                        $scope.model.totalTime = totalTime;
-                        $scope.model.maxPrime = maxPrime;
-                        $scope.model.totalPrimes = totalPrimes;
-                        $scope.model.totalNumbers = totalNumbers;
+                    function (result) {
+                        $scope.model.totalTime = result.totalTime;
+                        $scope.model.maxPrime = result.maxPrime;
+                        $scope.model.totalPrimes = result.totalPrimes;
+                        $scope.model.totalNumbers = result.totalNumbers;
                         $scope.complete = true;
                         $scope.processing = false;
                     },

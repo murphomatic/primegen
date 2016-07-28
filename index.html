@@ -21,34 +21,34 @@
             <hr />
             <div class="row">
                 <div class="small-12 medium-2 columns">
-                    <input type="text" ng-model="model.maxTime" placeholder="Seconds">
-                    <input type="button" class="button expanded" value="Go!" ng-click="calcMaxPrime()" />
+                    <input ng-disabled="processing" type="text" ng-model="model.maxTime" placeholder="Seconds">
+                    <input ng-disabled="processing" type="button" class="button expanded" value="Go!" ng-click="calcMaxPrime()" />
                 </div>
                 <div ng-show="!processing && !complete" class="small-12 medium-10 columns">
                     Please input the number of seconds you wish to calculate the maximum prime number in and click the "Go!" button.
                 </div>
                 <div ng-cloak>
                     <div ng-show="processing || error" class="small-12 medium-10 columns">
-                        <img ng-show="!error" src="img/loading.gif" />
-                        <div ng-show="error" class="alert label">Error occurred: {{error}}</div>
+                        <img ng-if="!error" src="img/loading.gif" />
+                        <div ng-if="error" class="callout alert expanded">Error occurred: {{error}}</div>
                     </div>
                     <div ng-show="complete && !error" class="small-12 medium-10 columns">
                         <div class="row">
-                            <div class="small-12 medium-6 large-3 columns">
+                            <div class="small-12 medium-6 large-3 columns text-right">
                                 <label>Total Time</label>
-                                {{totalTime/1000|number:2}} sec.
+                                {{model.totalTime/1000|number:2}} sec.
                             </div>
-                            <div class="small-12 medium-6 large-3 columns">
+                            <div class="small-12 medium-6 large-3 columns text-right">
                                 <label>Numbers Inspected</label>
-                                {{totalNumbers|number:0}}
+                                {{model.totalNumbers|number:0}}
                             </div>
-                            <div class="small-12 medium-6 large-3 columns">
-                                <label>Total Primes Founds<label>
-                                {{totalPrimes|number:0}}
+                            <div class="small-12 medium-6 large-3 columns text-right">
+                                <label>Total Primes Founds</label>
+                                {{model.totalPrimes|number:0}}
                             </div>
-                            <div class="small-12 medium-6 large-3 columns">
+                            <div class="small-12 medium-6 large-3 columns text-right">
                                 <label>Largest Prime Found</label>
-                                <b>{{maxPrime|number:0}}</b>
+                                <b>{{model.maxPrime|number:0}}</b>
                             </div>
                         </div>
                     </div>
