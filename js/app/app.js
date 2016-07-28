@@ -4,7 +4,7 @@
  */
 
 (function() {
-    "use strict";
+    'use strict';
     // main application module - no requirements at this time.
-    angular.module("primeApp", []);
+    angular.module('primeApp', []);
 })();
