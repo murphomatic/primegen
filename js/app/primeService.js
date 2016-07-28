@@ -1,3 +1,7 @@
+/* primeService.js
+ * Prime Generator service which manages the work to search for primes.
+ * STM - 07/28/2016
+ */
 
 (function () {
     'use strict';
@@ -11,11 +15,15 @@
                     var deferred = $q.defer();
 
                     try {
+                        // simple/initial validity checks.
                         if (isNaN(timeLimit)) throw { message: "You must provide a valid time in seconds." };
                         if (timeLimit < 1 || timeLimit > 60) throw { message: "Please choose a time between 1 and 60 seconds." };
 
+                        // this abomination allows us to run all of this from the local file system without Chrome croaking on 
+                        // origin distress.  Otherwise this solution would need to be hosted somewhere - then the worker function could live in its own .js file.
                         var worker = new Worker(URL.createObjectURL(new Blob(["(" + primeWorker.toString() + ")()"], { type: 'text/javascript' })));
 
+                        // process messages returned by the worker.  Messages flagged as "updates" do not result in the promise being resolved.
                         worker.addEventListener('message', function (e) {
                             var data = e.data;
                             if (data.update) {
@@ -26,6 +34,7 @@
                             }
                         });
 
+                        // start the worker process.
                         worker.postMessage({ timeLimit: timeLimit });
                     }
                     catch (exception) {
@@ -33,7 +42,8 @@
                     }
                     return deferred.promise;
 
-
+                    // this worker function could live in another .js file if we were hosting the application on a real webserver.  I've brought it in here as a
+                    // workaround for browsers griping about not being able to arbitrarily open a .js file from the local machine's file system.
                     function primeWorker() {
                         self.addEventListener('message', function (e) {
                             var data = e.data;
@@ -61,6 +71,7 @@
                                 }
                                 currentTime = new Date();
 
+                                // every second - post a message back to the caller with current stats.  Flag it as an update.
                                 if ((currentTime - startTime) % 1000 == 0)
                                     self.postMessage({
                                         totalTime: (currentTime - startTime),
@@ -73,6 +84,7 @@
 
                             var endTime = new Date();
 
+                            // Final update to caller. Not an update - this will result in the promise being resolved.
                             self.postMessage({
                                 totalTime: (endTime - startTime),
                                 maxPrime: primes[primes.length - 1],
@@ -94,11 +106,14 @@
                                 for (var i = 1001; primes[i] < top; i++) {
                                     if (test % primes[i] == 0) return false;
                                 }
+
+                                // otherwise the number is indeed a prime.
                                 return true;
                             }
                         });
                     }
                 }
             }
-        }]);
+        }
+    ]);
 })();
