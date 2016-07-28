@@ -7,18 +7,42 @@
         '$timeout',
         function ($q, $timeout) {
             return {
-                calcMaxPrime: function (timeLimit) {
+                calcMaxPrime: function (timeLimit, updateCallback) {
                     var deferred = $q.defer();
 
-                    $timeout(function () {
-                        try {
-                            if (isNaN(timeLimit)) throw { message: "You must provide a valid time in seconds." };
-                            if (timeLimit < 1 || timeLimit > 60) throw { message: "Please choose a time between 1 and 60 seconds." };
+                    try {
+                        if (isNaN(timeLimit)) throw { message: "You must provide a valid time in seconds." };
+                        if (timeLimit < 1 || timeLimit > 60) throw { message: "Please choose a time between 1 and 60 seconds." };
+
+                        var worker = new Worker(URL.createObjectURL(new Blob(["(" + primeWorker.toString() + ")()"], { type: 'text/javascript' })));
+
+                        worker.addEventListener('message', function (e) {
+                            var data = e.data;
+                            if (data.update) {
+                                (updateCallback || angular.noop)(data);
+                            }
+                            else {
+                                deferred.resolve(data);
+                            }
+                        });
+
+                        worker.postMessage({ timeLimit: timeLimit });
+                    }
+                    catch (exception) {
+                        deferred.reject(exception.message);
+                    }
+                    return deferred.promise;
+
+
+                    function primeWorker() {
+                        self.addEventListener('message', function (e) {
+                            var data = e.data;
+
                             var startTime = new Date();
                             var primes = [];
                             var currentNum = 1;
                             var currentTime = new Date();
-                            var maxTime = (timeLimit * 1000) - 1;  // give 1ms to finish up.
+                            var maxTime = (data.timeLimit * 1000) - 1;  // give 1ms to finish up.
 
                             // increment the test and check primality for X seconds.
                             while (currentTime - startTime <= maxTime) {
@@ -36,40 +60,44 @@
                                     currentNum++;
                                 }
                                 currentTime = new Date();
+
+                                if ((currentTime - startTime) % 1000 == 0)
+                                    self.postMessage({
+                                        totalTime: (currentTime - startTime),
+                                        maxPrime: primes[primes.length - 1],
+                                        totalPrimes: primes.length,
+                                        totalNumbers: currentNum - 1,
+                                        update: true
+                                    });
                             }
 
                             var endTime = new Date();
-                            deferred.resolve({
+
+                            self.postMessage({
                                 totalTime: (endTime - startTime),
                                 maxPrime: primes[primes.length - 1],
                                 totalPrimes: primes.length,
-                                totalNumbers: currentNum - 1
+                                totalNumbers: currentNum - 1,
+                                update: false
                             });
-                        }
-                        catch (exception) {
-                            deferred.reject(exception.message);
-                        }
 
-                        function isPrime(test) {
-                            if (test == 1) return true;
+                            function isPrime(test) {
+                                if (test == 1) return true;
 
-                            // quick-check first 1000 primes to see if test is a composite -
-                            for (var i = 1; i <= 1000 && i < primes.length; i++) {
-                                if (test % primes[i] == 0) return false;
+                                // quick-check first 1000 primes to see if test is a composite -
+                                for (var i = 1; i <= 1000 && i < primes.length; i++) {
+                                    if (test % primes[i] == 0) return false;
+                                }
+
+                                // if test is not a composite of the first 1000 primes, resort to doing a more expensive check with sqrt. 
+                                var top = Math.sqrt(test);
+                                for (var i = 1001; primes[i] < top; i++) {
+                                    if (test % primes[i] == 0) return false;
+                                }
+                                return true;
                             }
-
-                            // if test is not a composite of the first 1000 primes, resort to doing a more expensive check with sqrt. 
-                            var top = Math.sqrt(test);
-                            for (var i = 1001; primes[i] < top; i++) {
-                                if (test % primes[i] == 0) return false;
-                            }
-                            return true;
-                        }
-                    }, 100);
-
-                    return deferred.promise;
-
-
+                        });
+                    }
                 }
             }
         }]);
